@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import com.gamecity.scrabble.board.service.BoardService;
 import com.gamecity.scrabble.board.service.exception.BoardExistsException;
 import com.gamecity.scrabble.board.service.exception.BoardNotFoundException;
+import com.gamecity.scrabble.board.service.exception.JoinBoardException;
+import com.gamecity.scrabble.board.service.exception.LeaveBoardException;
 import com.gamecity.scrabble.entity.Board;
 import com.gamecity.scrabble.entity.User;
+import com.gamecity.scrabble.player.service.PlayerService;
 import com.gamecity.scrabble.repository.BoardRepository;
 import com.gamecity.scrabble.user.service.UserService;
 import com.gamecity.scrabble.validation.Validator;
@@ -33,18 +36,22 @@ public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
     private final UserService userService;
+    private final PlayerService playerService;
 
     /**
-     * Creates the constructor with the wired {@link BoardRepository}, {@link UserService}
+     * Creates the constructor with the wired {@link BoardRepository}, {@link UserService},
+     * {@link PlayerService}
      * 
      * @param boardRepository
      * @param userService
+     * @param playerService
      */
     @Autowired
-    public BoardServiceImpl(final BoardRepository boardRepository, final UserService userService) {
+    public BoardServiceImpl(final BoardRepository boardRepository, final UserService userService, final PlayerService playerService) {
 
         this.boardRepository = boardRepository;
         this.userService = userService;
+        this.playerService = playerService;
 
     }
 
@@ -77,6 +84,53 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public Board get(Long id) throws BoardNotFoundException {
         return boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException("Board with the id " + id + " isn't found!"));
+    }
+
+    @Override
+    public Board join(Long id, Long userId) throws JoinBoardException {
+
+        final User user = userService.get(userId);
+        final Board board = get(id);
+
+        switch (board.getStatus()) {
+        case STARTED:
+            throw new JoinBoardException("The game on board " + board.getId() + " has already been started!");
+        case FINISHED:
+            throw new JoinBoardException("The game on board " + board.getId() + " has already been finished!");
+        case TERMINATED:
+            throw new JoinBoardException("The game on board " + board.getId() + " has already ben terminated!");
+        case PENDING:
+            break;
+        }
+
+        playerService.add(board, user);
+
+        logger.debug("User {} joined the board {}.", user.getUsername(), board.getId());
+
+        return board;
+    }
+
+    @Override
+    public Board leave(Long id, Long userId) throws LeaveBoardException {
+
+        final User user = userService.get(userId);
+        final Board board = get(id);
+
+        switch (board.getStatus()) {
+        case STARTED:
+            throw new LeaveBoardException("The game on board " + board.getId() + " has already been started!");
+        case PENDING:
+            break;
+        default:
+            logger.debug("User {} tried to leave the board {} of {} status.", user.getUsername(), board.getId(), board.getStatus());
+            throw new LeaveBoardException("An unexpected error has been occured!");
+        }
+
+        playerService.remove(board, user);
+
+        logger.debug("User {} left the board {}.", user.getUsername(), board.getId());
+
+        return board;
     }
 
 }

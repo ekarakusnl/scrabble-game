@@ -42,6 +42,15 @@ public abstract class AbstractBaseEntity {
     }
 
     /**
+     * Sets the id of the entity
+     * 
+     * @param id
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
      * Gets the creation date of the entity
      * 
      * @return creation date as timestamp

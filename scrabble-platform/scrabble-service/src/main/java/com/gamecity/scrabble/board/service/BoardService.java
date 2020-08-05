@@ -2,6 +2,8 @@ package com.gamecity.scrabble.board.service;
 
 import com.gamecity.scrabble.board.service.exception.BoardExistsException;
 import com.gamecity.scrabble.board.service.exception.BoardNotFoundException;
+import com.gamecity.scrabble.board.service.exception.JoinBoardException;
+import com.gamecity.scrabble.board.service.exception.LeaveBoardException;
 import com.gamecity.scrabble.entity.Board;
 import com.gamecity.scrabble.entity.User;
 
@@ -34,5 +36,26 @@ public interface BoardService {
      *                                platform
      */
     Board get(Long id) throws BoardNotFoundException;
+
+    /**
+     * Adds a {@link User} to a {@link Board} as a player.
+     * 
+     * @param id     identifier of the {@link Board}
+     * @param userId identifier of the joined {@link User}
+     * @return the {@link Board}
+     * @throws JoinBoardException when the <code>user</code> isn't able to join the <code>board</code>.
+     */
+    Board join(Long id, Long userId) throws JoinBoardException;
+
+    /**
+     * Removes a {@link User} from a {@link Board}.
+     * 
+     * @param id     identifier of the {@link Board}
+     * @param userId identifier of the left {@link User}
+     * @return the {@link Board}
+     * @throws LeaveBoardException when the <code>user</code> isn't able to leave the
+     *                             <code>board</code>.
+     */
+    Board leave(Long id, Long userId) throws LeaveBoardException;
 
 }
